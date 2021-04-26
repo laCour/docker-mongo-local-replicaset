@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-HOSTNAME=${HOSTNAME:=localhost}
+REPLICA_SET_HOST=${REPLICA_SET_HOST:=localhost}
 REPLICA_SET_NAME=${REPLICA_SET_NAME:=rs0}
 USERNAME=${USERNAME:=dev}
 PASSWORD=${PASSWORD:=dev}
@@ -25,9 +25,9 @@ function waitForMongo {
 }
 
 if [ ! "$(ls -A /data/db1)" ]; then
-    mkdir /data/db1
-    mkdir /data/db2
-    mkdir /data/db3
+    mkdir -p /data/db1
+    mkdir -p /data/db2
+    mkdir -p /data/db3
 
     mongod --dbpath /data/db1 &
     MONGO_PID=$!
@@ -61,9 +61,9 @@ waitForMongo 27017 $USERNAME $PASSWORD
 waitForMongo 27018
 waitForMongo 27019
 
-echo "CONFIGURING REPLICA SET: $HOSTNAME"
-CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: '$HOSTNAME:27017' }, { _id: 1, host: '$HOSTNAME:27018' }, { _id: 2, host: '$HOSTNAME:27019' } ]}"
-mongo admin --port 27017 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ replSetInitiate: $CONFIG })"
+echo "CONFIGURING REPLICA SET: $REPLICA_SET_HOST"
+CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: '$REPLICA_SET_HOST:27017' }, { _id: 1, host: '$REPLICA_SET_HOST:27018' }, { _id: 2, host: '$REPLICA_SET_HOST:27019' } ]}"
+mongo admin --port 27017 -u $USERNAME -p $PASSWORD --eval "rs.initiate($CONFIG)"
 
 waitForMongo 27018 $USERNAME $PASSWORD
 waitForMongo 27019 $USERNAME $PASSWORD

@@ -32,13 +32,13 @@ The container will create one volume at `/data`, but you can mount one or more t
 You can customize the replica set name by providing `REPLICA_SET_NAME` environment variable. Default name is: `rs0`
 
 #### Hostname
-The hostname can be set provided a `HOSTNAME` environment variable.
+The hostname can be set provided a `REPLICA_SET_HOST` environment variable. Default host is: `localhost`
 
 ### Examples
 
 #### Example Run
 
-    docker run -d -p 27017:27017 -p 27018:27018 -p 27019:27019 -v /data/mongodb:/data -e "REPLICA_SET_NAME=rs0" -e "USERNAME=dev" -e "PASSWORD=dev" --restart=always laCour/docker-mongo-local-replicaset --name mongo
+    docker run -d -p 27017:27017 -p 27018:27018 -p 27019:27019 -v /data/mongodb:/data -e "REPLICA_SET_NAME=rs0" -e "REPLICA_SET_HOST=localhost" -e "USERNAME=dev" -e "PASSWORD=dev" --restart=always lacour/docker-mongo-local-replicaset --name mongo
 
 #### Example Connection String
 
