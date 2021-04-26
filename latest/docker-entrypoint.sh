@@ -44,9 +44,9 @@ fi
 
 echo "WRITING KEYFILE"
 
-openssl rand -base64 741 > /var/mongo_keyfile
+openssl rand -base64 756 > /var/mongo_keyfile
 chown mongodb /var/mongo_keyfile
-chmod 600 /var/mongo_keyfile
+chmod 400 /var/mongo_keyfile
 
 echo "STARTING CLUSTER"
 
