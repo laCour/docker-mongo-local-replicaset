@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
+HOSTNAME=${HOSTNAME:=localhost}
 REPLICA_SET_NAME=${REPLICA_SET_NAME:=rs0}
 USERNAME=${USERNAME:=dev}
 PASSWORD=${PASSWORD:=dev}
-
 
 function waitForMongo {
     port=$1
@@ -29,7 +29,7 @@ if [ ! "$(ls -A /data/db1)" ]; then
     mkdir /data/db2
     mkdir /data/db3
 
-    mongod --smallfiles --dbpath /data/db1 &
+    mongod --dbpath /data/db1 &
     MONGO_PID=$!
 
     waitForMongo 27017
@@ -50,27 +50,27 @@ chmod 600 /var/mongo_keyfile
 
 echo "STARTING CLUSTER"
 
-mongod --port 27003 --smallfiles --dbpath /data/db3 --auth --replSet $REPLICA_SET_NAME --keyFile /var/mongo_keyfile  &
+mongod --replSet $REPLICA_SET_NAME --port 27019 --bind_ip_all --dbpath /data/db3 --auth  --keyFile /var/mongo_keyfile  --oplogSize 128 &
 DB3_PID=$!
-mongod --port 27002 --smallfiles --dbpath /data/db2 --auth --replSet $REPLICA_SET_NAME --keyFile /var/mongo_keyfile  &
+mongod --replSet $REPLICA_SET_NAME --port 27018 --bind_ip_all --dbpath /data/db2 --auth --keyFile /var/mongo_keyfile --oplogSize 128  &
 DB2_PID=$!
-mongod --port 27001 --smallfiles --dbpath /data/db1 --auth --replSet $REPLICA_SET_NAME --keyFile /var/mongo_keyfile  &
+mongod --replSet $REPLICA_SET_NAME --port 27017 --bind_ip_all --dbpath /data/db1 --auth --keyFile /var/mongo_keyfile --oplogSize 128  &
 DB1_PID=$!
 
-waitForMongo 27001 $USERNAME $PASSWORD
-waitForMongo 27002
-waitForMongo 27003
+waitForMongo 27017 $USERNAME $PASSWORD
+waitForMongo 27018
+waitForMongo 27019
 
 echo "CONFIGURING REPLICA SET: $HOSTNAME"
-CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: '$HOSTNAME:27001', priority: 2 }, { _id: 1, host: '$HOSTNAME:27002' }, { _id: 2, host: '$HOSTNAME:27003' } ]}"
-mongo admin --port 27001 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ replSetInitiate: $CONFIG })"
+CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: '$HOSTNAME:27017' }, { _id: 1, host: '$HOSTNAME:27018' }, { _id: 2, host: '$HOSTNAME:27019' } ]}"
+mongo admin --port 27017 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ replSetInitiate: $CONFIG })"
 
-waitForMongo 27002 $USERNAME $PASSWORD
-waitForMongo 27003 $USERNAME $PASSWORD
+waitForMongo 27018 $USERNAME $PASSWORD
+waitForMongo 27019 $USERNAME $PASSWORD
 
-mongo admin --port 27001 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
-mongo admin --port 27002 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
-mongo admin --port 27003 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongo admin --port 27017 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongo admin --port 27018 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongo admin --port 27019 -u $USERNAME -p $PASSWORD --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
 
 echo "REPLICA SET ONLINE"
 
